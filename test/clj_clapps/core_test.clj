@@ -65,7 +65,7 @@
       (let [r (parse-main-args this-ns ["print-date" "--help"])]
         (is (like? {:command some?} r))
         (is (like? {:exit-message some? :ok? nil?}
-                   (parse-cmd-args (meta #'print-date) [])))))))
+                   (parse-cmd-args (meta #'print-date) [] nil)))))))
 
 (deftest options-test
   (testing "validate enums"
@@ -86,16 +86,16 @@
           parse-cmd-args #'clj-clapps.core/parse-cmd-args]
       (is (like? {:exit-message #(str/includes? % "dummy-cmd [options] arg1 arg2")
                   :ok? true}
-                 (parse-cmd-args (meta cmd) ["-h"])))
+                 (parse-cmd-args (meta cmd) ["-h"] nil)))
       (is (like? {:exit-message #(str/includes? % "Wrong number of arguments. Expected 2")
                   :ok? nil}
-                 (parse-cmd-args (meta cmd) [])))
+                 (parse-cmd-args (meta cmd) [] nil)))
       (is (like? {:cmd-fn some?}
-                 (parse-cmd-args (meta cmd) ["a" "b"])))
+                 (parse-cmd-args (meta cmd) ["a" "b"] false)))
       (is (like? {:exit-message #(str/includes? % "must be an int")}
-                 (parse-cmd-args (meta cmd) ["-o" "xyz" "a" "b"])))
+                 (parse-cmd-args (meta cmd) ["-o" "xyz" "a" "b"] false)))
       (is (like? {:cmd-fn some?}
-                 (parse-cmd-args (meta cmd) ["-o" "5" "a" "b"]))))))
+                 (parse-cmd-args (meta cmd) ["-o" "5" "a" "b"] false))))))
 
 (deftest cmd-execs
   (testing "parsing main commands"

@@ -154,9 +154,14 @@
   (->> [cmd-desc
         ""
         (str "Usage: " cmd-name " [options] " (when (seq sub-cmds) "command")
-             (str/join " " args))
+             (str/join " " (map :name args)))
+        (when (seq args)
+          ["" "Arguments:"
+           (for [arg args]
+             (format "\t%s\t%s" (:name arg) (:doc arg)))
+           ""])
         (when opts-summary
-          ["Options:" opts-summary ""])
+          ["" "Options:" opts-summary ""])
         (when (seq sub-cmds)
           (cons "Commands:"
                 (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))]
@@ -198,48 +203,47 @@
 
 
 
-(defn- parse-cmd-args [cmd args]
+(defn- parse-cmd-args [cmd args main?]
   (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
         {:keys[options arguments errors summary]}
         (cli/parse-opts args (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
     (cond
       (:help options)
-      {:exit-message (usage (str (-> cmd :ns ns-name) " [global-options] " (:name cmd))
-                            (:doc cmd) summary [] (map :name req-args)) :ok? true}
-      errors
-      {:exit-message (error-msg errors)}
-      :else
-      (let [{:keys [arguments errors]} (validate-args req-args arguments)]
-        (if (seq errors)
-          {:exit-message (error-msg errors)}
-          {:cmd-fn (ns-resolve (:ns cmd) (:name cmd))
-           :cmd-args (concat arguments (map #(get options (keyword (:name %))) opt-args))})))))
+      {:exit-message (usage (if main?
+                              (-> cmd :ns ns-name)
+                              (str (-> cmd :ns ns-name) " [global-options] " (:name cmd)))
+                            (:doc cmd) summary [] req-args) :ok? true}
+      errors {:exit-message (error-msg errors)}
+      :else (let [{:keys [arguments errors]} (validate-args req-args arguments)]
+              (if (seq errors)
+                {:exit-message (error-msg errors)}
+                {:cmd-fn (ns-resolve (:ns cmd) (:name cmd))
+                 :cmd-args (concat arguments (map #(get options (keyword (:name %))) opt-args))})))))
 
 (defn- parse-main-args [ns args]
   (let [global-opts (global-options ns)
+        sub-cmds (sub-commands ns)
         {:keys [options arguments errors summary]}
-        (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)
-        sub-cmds (sub-commands ns)]
+        (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)]
     (cond
-      (:help options)
-      {:exit-message (usage (ns-name ns) "" summary sub-cmds []) :ok? true}
-      errors
-      {:exit-message (error-msg errors)}
-      (empty? sub-cmds)
-      {:exit-message "No commands implemented, at least one defcmd should be defined"}
-      (= 1 (count sub-cmds))
-      {:command (first sub-cmds) :arguments arguments :options options :global-opts global-opts}
-      (empty? (first arguments))
-      {:exit-message (usage (ns-name ns) "Missing command" summary sub-cmds [])}
+      (empty? sub-cmds) {:exit-message "No commands implemented, at least one defcmd should be defined"}
+      (= 1 (count sub-cmds)) {:command (first sub-cmds) :arguments args :main? true}
+      (:help options) {:exit-message (usage (ns-name ns) "" summary sub-cmds []) :ok? true}
+      errors {:exit-message (error-msg errors)}
+      (empty? (first arguments)) {:exit-message
+                                  (usage (ns-name ns) "Missing command" summary sub-cmds [])}
       :else (if-let [cmd (first (filter #(= (first arguments) (-> % :name name)) sub-cmds))]
               {:command cmd :arguments (rest arguments) :options options :global-opts global-opts}
               {:exit-message (str "Unknown command: " (first arguments))}))))
 
-(defn exec! [ns args]
-  (let [{:keys[exit-message arguments options command ok? global-opts]} (parse-main-args ns args)
+(defn exec!
+  "Parses the arguments and executes the specified command"
+  {:arglists '([main-class-ns arguments])}
+  [ns args]
+  (let [{:keys[exit-message arguments options command ok? global-opts main?]} (parse-main-args ns args)
         _ (when exit-message
             (exit (if ok? 0 1) exit-message))
-        {:keys[exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments)]
+        {:keys[exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments main?)]
     (when exit-message
       (exit (if ok? 0 1) exit-message))
     (set-options! global-opts options)
