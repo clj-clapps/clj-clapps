@@ -26,7 +26,8 @@
 
 (cl/defopt use-proxy "my global option" :short "-p" :default false)
 
-(cl/defopt global-opt1 "a global option for ..." :short "-b" :validate [int? "must be a integer"])
+(cl/defopt global-opt1 "a global option for ..." :short "-b" :parse-fn read-string
+  :validate [int? "must be a integer"])
 
 (defn- valid-day? [d]
   (#{"Mon" "Fri"} d))
@@ -98,4 +99,10 @@
 
 (deftest cmd-execs
   (testing "parsing main commands"
-    ))
+    (let [parse-main-args #'clj-clapps.core/parse-main-args]
+      (is (like? {:exit-message #(str/includes? % "core-test [options]")}
+                 (parse-main-args this-ns ["-h"])))
+      (is (like? {:exit-message #(str/includes? % "must be a integer")}
+                 (parse-main-args this-ns ["-b" "x"])))
+      (is (like? {:command some?}
+                 (parse-main-args this-ns ["-b" "4" "dummy-cmd" "a" "b"]))))))

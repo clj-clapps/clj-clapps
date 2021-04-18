@@ -1,5 +1,5 @@
 (ns clj-clapps.core
-  (:require [clj-clapps.impl :as impl]
+  (:require [clj-clapps.spec :as spec]
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [clojure.tools.cli :as cli]
@@ -14,19 +14,67 @@
 (defn- eval-meta [x]
   (vary-meta x (partial walk/prewalk eval-symbols)))
 
-(defmacro defcmd "Define a command"
+(defn- arg-meta [arg]
+  (assoc (meta arg) :name (name arg)))
+
+(defn- cmd-params-opts [args]
+  (let [[req-args [_ & [opt-args]]] (split-with #(not= (symbol "&") %) args)]
+    [(map arg-meta req-args)
+     (map arg-meta opt-args)]))
+
+(defmacro defcmd
+  "Like defn, but the resulting function can be invoked from the command line
+  The docstring? and the arguments metadata are used to generate the cli options.
+
+  Example:
+  (defcmd say-hello \"Say Hello command\"
+      [name & [^{:short \"-l\" :enum [\"en\" \"es\"] :default \"en\"} lang]]
+      ;; do something with name and lang
+      )
+
+  The arguments metadata supports the following attributes:
+  :short			The short option prefix, e.g \"-o\"
+  :long?			Allow long name option. Defaults to true. Long name is generated from the argument name.
+  :default		The default value.
+  :default-fn	A function invoke to get the default value
+  :validate		A tuple like [validate-fn validate-msg] to validate the passed option value
+  :enum				A vector of allowed values
+  :parse-fn		A function to convert the option value string to the desired type"
+  {:arglists '([name docstring? [params*] body])}
   [cmd args & body]
   (let [doc# (when (string? args) args)
         [args# body#] (if (string? args) [(first body) (rest body)] [args body])
         args# (into [] (walk/prewalk eval-meta args#))
-        ]
+        [req-args-meta opt-args-meta] (cmd-params-opts args#)]
+    (doseq [arg req-args-meta]
+      (when-let [probs (s/explain-data ::spec/param-meta (dissoc arg :name))]
+        (throw (Exception. (format "Invalid param %s metadata:\n%s" (:name arg)
+                                   (with-out-str (s/explain-out probs)))))))
+    (doseq [opt opt-args-meta]
+      (when-let [probs (s/explain-data ::spec/opt-args (->> (dissoc opt :name) (apply concat)))]
+        (throw (Exception. (format "Invalid param %s metadata:\n%s" (:name opt)
+                                   (with-out-str (s/explain-out probs)))))))
     `(defn ~(vary-meta cmd assoc :command? true :doc doc#) ~args#
-       ~@body# )))
+       ~@body#)))
 
-(defmacro defopt "Define a global option"
+(defmacro defopt
+  "Declares a global variable that's exposed as a command line option.
+  The docstring? and the options are used to generate the cli options.
+  Example:
+  (defopt verbose \"Verbosity Level\" :long? false :short \"-v\" :update-fn inc)
+
+  The following options are allowed, and have the semantics as the corresponding options in Clojure tools.cli
+  :short			The short option prefix, e.g \"-o\"
+  :long?			Allow long name option. Defaults to true. Long name is generated from the argument name.
+  :default		The default value.
+  :default-fn	A function invoke to get the default value
+  :validate		A tuple like [validate-fn validate-msg] to validate the passed option value
+  :enum				A vector of allowed values
+  :parse-fn		A function to convert the option value string to the desired type"
+  {:arglists '([name docstring? [options*]])}
   [opt-name & [doc?  & opts]]
   (let [[doc? opts] (if (string? doc?) [doc? opts] [nil (cons doc? opts)])
-        _ (when-let [probs (s/explain-data ::impl/opt-args (eval (into [] opts)))]
+        _ (when-let [probs (s/explain-data ::spec/opt-args (eval (into [] opts)))]
             (throw (Exception. (format "Invalid option arguments:\n%s"
                                        (with-out-str (s/explain-out probs))))))
         opts (apply hash-map :doc doc? opts)]
@@ -36,11 +84,19 @@
 
 (defopt help "Print help" :short "-h" :default false)
 
-(defn exit [status msg]
+(defn exit
+  "Prints `msg` and exist with the given `status`"
+  [status msg]
   (println msg)
   (System/exit status))
 
-(defn prompt [msg & {:keys[password?]}]
+(defn prompt
+  "Prompts for user input.
+  The following options are supported:
+  :password?	If true, it will hide the user input
+  "
+  {:arglists '([message [options*]])}
+  [msg & {:keys[password?]}]
   (if password?
     (.readPassword (System/console) msg (into-array []))
     (.readLine (System/console) msg (into-array []))))
@@ -116,9 +172,6 @@
     (alter-var-root (some #(when (= (name (:name %)) (name k))
                              (ns-resolve (:ns %) (:name %))) opts) (constantly v))))
 
-(defn- arg-meta [arg]
-  (assoc (meta arg) :name (name arg)))
-
 (defn- validate-arg [arg value]
   (let [{:keys [parse-fn validate] :as meta-arg} arg
         [value error] (if parse-fn
@@ -143,12 +196,12 @@
     {:arguments values
      :errors (filter some? errors)}))
 
+
+
 (defn- parse-cmd-args [cmd args]
-  (let [cmd-args (-> cmd :arglists first)
-        [req-args [_ & [opt-args]]] (split-with #(not= (symbol "&") %) cmd-args)
-        req-args (map arg-meta req-args)
+  (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
         {:keys[options arguments errors summary]}
-        (cli/parse-opts args (opts-meta->cli-options (concat (map arg-meta opt-args) [(meta #'help)])))]
+        (cli/parse-opts args (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
     (cond
       (:help options)
       {:exit-message (usage (str (-> cmd :ns ns-name) " [global-options] " (:name cmd))
@@ -160,7 +213,7 @@
         (if (seq errors)
           {:exit-message (error-msg errors)}
           {:cmd-fn (ns-resolve (:ns cmd) (:name cmd))
-           :cmd-args (concat arguments (map #(get options (keyword (name %))) opt-args))})))))
+           :cmd-args (concat arguments (map #(get options (keyword (:name %))) opt-args))})))))
 
 (defn- parse-main-args [ns args]
   (let [global-opts (global-options ns)
