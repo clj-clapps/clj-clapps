@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.1] — 2021-04-20
+
 ## [0.0.1] — 2021-04-20
 ### Added
 - _CHANGELOG.md_ created.
@@ -20,4 +22,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 [0.0.1]: https://github.com/rinconj/clj-clapps/compare/0.0.0...0.0.1
-[Unreleased]: https://github.com/rinconj/clj-clapps/compare/0.0.1...HEAD
+[0.4.1]: https://github.com/rinconj/clj-clapps/compare/0.0.1...0.4.1
+[Unreleased]: https://github.com/rinconj/clj-clapps/compare/0.4.1...HEAD
