@@ -1,5 +1,5 @@
-(defproject clj-clapps "0.0.0"
-  :description "FIXME: write description"
+(defproject org.clojars.clj-clapps/clj-clapps "0.0.0"
+  :description "A library to create command line apps with ease and elegance"
   :url "https://github.com/rinconj/clj-clapps"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
@@ -10,7 +10,7 @@
             [lein-changelog "0.3.2"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.0"]]}}
   :deploy-repositories [["releases" :clojars]]
-  :aliases {"update-readme-version" ["shell" "sed" "-i" "s/\\\\[clj-clapps \"[0-9.]*\"\\\\]/[clj-clapps \"${:version}\"]/" "README.md"]}
+  :aliases {"update-readme-version" ["shell" "sed" "-i" "s/clj-clapps \"[0-9.]*\"\\\\]/clj-clapps \"${:version}\"]/" "README.md"]}
   :release-tasks [["shell" "git" "diff" "--exit-code"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["change" "version" "leiningen.release/bump-version" "release"]
