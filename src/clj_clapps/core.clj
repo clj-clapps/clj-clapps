@@ -87,7 +87,10 @@
 (defn exit
   "Prints `msg` and exist with the given `status`"
   [status msg]
-  (println msg)
+  (if (zero? status)
+    (println msg)
+    (binding [*out* System/err]
+      (println msg)))
   (System/exit status))
 
 (defn prompt
@@ -101,12 +104,16 @@
     (.readPassword (System/console) msg (into-array []))
     (.readLine (System/console) msg (into-array []))))
 
-(defmacro exit-on-error [action & {:keys [message message-fn]}]
+(defmacro exit-on-error
+  "Tries to execute the action, if successful returns action result, otherwise prints the given message to std error"
+  {:arglists '([action message]
+               [action message-fn])}
+  [action msg]
   (let [ex (gensym)]
     `(try
        ~action
        (catch Exception ~ex
-         (exit 1 ~(if message-fn `(~message-fn ~ex) message))))))
+         (exit 1 ~(if (fn? msg) `(~msg ~ex) msg))))))
 
 (defn- opt-long [v]
   (let [opt-name (:name v)]
