@@ -9,7 +9,7 @@ Inspired by Python **Typer library** and Rust's own CLI library, and built on to
 
 
 ```clj
-[org.clojars.clj-apps/clj-clapps "0.4.5"]
+[org.clojars.clj-apps/clj-clapps "0.4.6"]
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ Lein:
 
 ```clojure
 ;; ...
-[org.clojars.clj-apps/clj-clapps "0.4.5"]
+[org.clojars.clj-apps/clj-clapps "0.4.6"]
 ;; ...
 ```
 
@@ -28,7 +28,7 @@ Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-apps/clj-clapps {:mvn/version "0.4.5"}
+org.clojars.clj-apps/clj-clapps {:mvn/version "0.4.6"}
 ;; ...
 
 ```
