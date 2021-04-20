@@ -9,3 +9,5 @@ pom.xml.asc
 /.nrepl-port
 /.idea
 /*.iml
+profiles.clj
+credentials.*
