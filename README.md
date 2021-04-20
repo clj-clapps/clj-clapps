@@ -1,7 +1,7 @@
 # clj-clapps
 [![Build Status](https://travis-ci.com/rinconjc/clj-clapps.svg?branch=master)](https://travis-ci.org/rinconj/clj-clapps)
-[![codecov](https://codecov.io/gh/rinconj/clj-clapps/branch/master/graph/badge.svg)](https://codecov.io/gh/rinconj/clj-clapps)
-[![Clojars Project](https://img.shields.io/clojars/v/clj-clapps.svg)](https://clojars.org/clj-clapps)
+[![codecov](https://codecov.io/gh/rinconjc/clj-clapps/branch/master/graph/badge.svg?token=yZjh3WWEp5)](https://codecov.io/gh/rinconjc/clj-clapps)
+[![Clojars Project](https://img.shields.io/clojars/v/org.clojars.clj-clapps/clj-clapps.svg)](https://clojars.org/org.clojars.clj-clapps/clj-clapps)
 
 A Clojure library designed to make building command line apps simple and elegant.
 
@@ -24,11 +24,11 @@ Lein:
 ;; ...
 ```
 
-Clojure tools.deps:
+Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-apps/clj-clapps {:mvn/version "0.0.0"}
+org.clojars.clj-apps/clj-clapps {:mvn/version "0.4.5"}
 ;; ...
 
 ```
