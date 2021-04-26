@@ -126,15 +126,17 @@
   (fn [val]
     (some #(= val %) enum)))
 
-(defn- env-fn [env-var]
+(defn- env-fn [env-var default]
   (fn [_]
-    (System/getenv (str/upper-case env-var))))
+    (or
+     (System/getenv (str/upper-case env-var))
+     default)))
 
 (defn- meta->option [{:keys [enum doc short env] :as v}]
   (let [v (cond-> v
             enum (update :validate concat
                          [(enum-check-fn enum) (format "Must be one of %s" (str/join "," enum))])
-            env (assoc :default-fn (env-fn env)))]
+            env (assoc :default-fn (env-fn env (:default v))))]
     (->> (apply concat
                 [(:short v) (opt-long v) (:doc v)]
                 [:id (keyword (name (:name v)))]
