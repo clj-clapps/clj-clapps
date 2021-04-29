@@ -3,9 +3,9 @@
 [![codecov](https://codecov.io/gh/clj-clapps/clj-clapps/branch/main/graph/badge.svg?token=JZJUAVUYCB)](https://codecov.io/gh/clj-clapps/clj-clapps)
 [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.clj-clapps/clj-clapps.svg)](https://clojars.org/org.clojars.clj-clapps/clj-clapps)
 
-A Clojure library designed to create command line apps simple and elegant.
+A Clojure library to write command line apps in a simple and elegant way.
 
-Inspired by Python Typer, and Rust CLI libraries, and built on top of Clojure's [tools.cli](https://github.com/clojure/tools.cli) library
+Inspired by Python Typer, and built on top of Clojure's [tools.cli](https://github.com/clojure/tools.cli) library
 
 
 ```clj

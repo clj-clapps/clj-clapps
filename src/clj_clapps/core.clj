@@ -3,7 +3,8 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [clojure.tools.cli :as cli]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk])
+  (:import [java.io File PrintStream]))
 
 (defn- eval-symbols [x]
   (cond
@@ -84,13 +85,15 @@
 
 (defopt help "Print help" :short "-h" :default false)
 
+(defn print-error [msg]
+  (.println System/err msg))
+
 (defn exit
   "Prints `msg` and exist with the given `status`"
   [status msg]
   (if (zero? status)
     (println msg)
-    (binding [*out* System/err]
-      (println msg)))
+    (print-error msg))
   (System/exit status))
 
 (defn prompt
@@ -100,9 +103,11 @@
   "
   {:arglists '([message [options*]])}
   [msg & {:keys[password?]}]
-  (if password?
-    (.readPassword (System/console) msg (into-array []))
-    (.readLine (System/console) msg (into-array []))))
+  (if-let [console (System/console)]
+    (if password?
+      (str/join (.readPassword console msg (into-array [])))
+      (.readLine console msg (into-array [])))
+    (print-error "Terminal console not available!")))
 
 (defmacro exit-on-error
   "Tries to execute the action, if successful returns action result, otherwise prints the given message to std error"
@@ -159,7 +164,7 @@
        (map (comp meta second))
        (filter :command?)))
 
-(defn- usage [cmd-name cmd-desc opts-summary sub-cmds args]
+(defn- usage [cmd-name cmd-desc opts-summary sub-cmds args global-opts-summary]
   (->> [cmd-desc
         ""
         (str "Usage: " cmd-name " [options] " (when (seq sub-cmds) "command")
@@ -167,13 +172,14 @@
         (when (seq args)
           ["" "Arguments:"
            (for [arg args]
-             (format "\t%s\t%s" (:name arg) (:doc arg)))
-           ""])
+             (format "\t%s\t%s" (:name arg) (:doc arg)))])
         (when opts-summary
           ["" "Options:" opts-summary ""])
         (when (seq sub-cmds)
           (cons "Commands:"
-                (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))]
+                (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))
+        (when global-opts-summary
+          ["" "Global-Options:" global-opts-summary ""])]
        (flatten)
        (str/join \newline)))
 
@@ -210,9 +216,7 @@
     {:arguments values
      :errors (filter some? errors)}))
 
-
-
-(defn- parse-cmd-args [cmd args main?]
+(defn- parse-cmd-args [cmd args main? global-opts-summary]
   (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
         {:keys[options arguments errors summary]}
         (cli/parse-opts args (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
@@ -221,7 +225,7 @@
       {:exit-message (usage (if main?
                               (-> cmd :ns ns-name)
                               (str (-> cmd :ns ns-name) " [global-options] " (:name cmd)))
-                            (:doc cmd) summary [] req-args) :ok? true}
+                            (:doc cmd) summary [] req-args global-opts-summary) :ok? true}
       errors {:exit-message (error-msg errors)}
       :else (let [{:keys [arguments errors]} (validate-args req-args arguments)]
               (if (seq errors)
@@ -235,25 +239,36 @@
         {:keys [options arguments errors summary]}
         (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)]
     (cond
-      (empty? sub-cmds) {:exit-message "No commands implemented, at least one defcmd should be defined"}
-      (= 1 (count sub-cmds)) {:command (first sub-cmds) :arguments args :main? true}
-      (:help options) {:exit-message (usage (ns-name ns) "" summary sub-cmds []) :ok? true}
+      (empty? sub-cmds) {:exit-message
+                         (format "No commands defined in ns:%s, at least one (defcmd ...) should be defined" (name ns))}
+      (= 1 (count sub-cmds)) {:command (first sub-cmds)
+                              :arguments args :main? true}
+      (:help options) {:exit-message (usage (ns-name ns) "" nil sub-cmds [] summary) :ok? true}
       errors {:exit-message (error-msg errors)}
       (empty? (first arguments)) {:exit-message
-                                  (usage (ns-name ns) "Missing command" summary sub-cmds [])}
+                                  (usage (ns-name ns) "Missing command" nil sub-cmds [] summary)}
       :else (if-let [cmd (first (filter #(= (first arguments) (-> % :name name)) sub-cmds))]
-              {:command cmd :arguments (rest arguments) :options options :global-opts global-opts}
+              {:command cmd
+               :arguments (rest arguments) :options options :global-opts global-opts
+               :summary summary}
               {:exit-message (str "Unknown command: " (first arguments))}))))
 
 (defn exec!
   "Parses the arguments and executes the specified command"
   {:arglists '([main-class-ns arguments])}
   [ns args]
-  (let [{:keys[exit-message arguments options command ok? global-opts main?]} (parse-main-args ns args)
+  (let [{:keys[exit-message arguments options command ok? global-opts main? summary]}
+        (parse-main-args ns args)
         _ (when exit-message
             (exit (if ok? 0 1) exit-message))
-        {:keys[exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments main?)]
+        {:keys[exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments main? summary)]
     (when exit-message
       (exit (if ok? 0 1) exit-message))
     (set-options! global-opts options)
-    (apply cmd-fn cmd-args)))
+    (try
+      (apply cmd-fn cmd-args)
+      (catch Exception e
+        (let [tmp (File/createTempFile (name ns) "-error.trace")]
+          (spit tmp (ex-data e))
+          (.printStackTrace e (PrintStream. tmp))
+          (exit 1 (format "Oops something went wrong! Error dump created in:%s" tmp)))))))
