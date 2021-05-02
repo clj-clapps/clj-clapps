@@ -1,6 +1,6 @@
 (defproject org.clojars.clj-clapps/clj-clapps "0.4.8"
   :description "A library to create command line apps with ease and elegance"
-  :url "https://github.com/rinconj/clj-clapps"
+  :url "https://github.com/clj-clapps/clj-clapps"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/tools.cli "1.0.206"]]
