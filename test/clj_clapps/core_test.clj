@@ -1,9 +1,9 @@
 (ns clj-clapps.core-test
   (:require [clj-clapps.core :as cl]
-            [clojure.java.shell :refer [sh]]
-            [clojure.test :refer :all]
-            [clojure.string :as str])
-  (:import [java.time LocalDate LocalDateTime]))
+            [clojure.string :as str]
+            [clojure.test :refer :all])
+  (:import clojure.lang.ExceptionInfo
+           [java.time LocalDate LocalDateTime]))
 
 (defn alike? [x y]
   (cond
@@ -105,4 +105,9 @@
       (is (like? {:exit-message #(str/includes? % "must be a integer")}
                  (parse-main-args this-ns ["-b" "x"])))
       (is (like? {:command some?}
-                 (parse-main-args this-ns ["-b" "4" "dummy-cmd" "a" "b"]))))))
+                 (parse-main-args this-ns ["-b" "4" "dummy-cmd" "a" "b"])))))
+
+  (testing "executing commands"
+    (with-redefs [clj-clapps.core/exit #(throw (ex-info "Cmd Exit" {:status %1 :msg %2}))]
+      (is (thrown? ExceptionInfo (cl/exec! this-ns ["-h"])))
+      (is (nil? (cl/exec! this-ns ["dummy-cmd" "1" "2"]))))))

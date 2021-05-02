@@ -249,7 +249,9 @@
                                   (usage (ns-name ns) "Missing command" nil sub-cmds [] summary)}
       :else (if-let [cmd (first (filter #(= (first arguments) (-> % :name name)) sub-cmds))]
               {:command cmd
-               :arguments (rest arguments) :options options :global-opts global-opts
+               :arguments (rest arguments)
+               :options options
+               :global-opts global-opts
                :summary summary}
               {:exit-message (str "Unknown command: " (first arguments))}))))
 
@@ -268,7 +270,7 @@
     (try
       (apply cmd-fn cmd-args)
       (catch Exception e
-        (let [tmp (File/createTempFile (name ns) "-error.trace")]
+        (let [tmp (File/createTempFile (name (ns-name ns)) "-error.trace")]
           (spit tmp (ex-data e))
           (.printStackTrace e (PrintStream. tmp))
           (exit 1 (format "Oops something went wrong! Error dump created in:%s" tmp)))))))
