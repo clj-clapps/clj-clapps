@@ -40,10 +40,10 @@ Declare and specify your **command** function with **defcmd**:
 
 (ns my-cool-cli
   (:gen-class)
-  (:require [clj-clapps.core :as cl]))
+  (:require [clj-clapps/core :as cl :refer[defcmd defopt]]))
     
 ;; define your command function
-(cl/defcmd main-cmd
+(defcmd main-cmd
   "My cool command help description"
   [^{:doc "Argument 1 of cool command" } arg1
   ;; optional arguments vector become command options
@@ -83,15 +83,16 @@ e.g.
 ```clojure
 (ns service
   (:gen-class)
+  (:require [clj-clapps/core :as cl :refer[defcmd defopt]])
   ;;...
   )
 ;; ...
 
-(cl/defcmd start "start action" [port])
+(defcmd start "start action" [port])
 
-(cl/defcmd stop "stop action" [port])
+(defcmd stop "stop action" [port])
 
-(cl/defcmd re-start "re-start action" [port])
+(defcmd re-start "re-start action" [port])
 ;; ...
 ```
 The above can be invoked as `clj -M -m service start 8080` or `clj -M service stop 8080` , etc.
@@ -120,7 +121,7 @@ e.g.
 
 ```clojure
 
-(cl/defopt debug "enable debug mode" :short "-d")
+(defopt debug "enable debug mode" :short "-d")
 
 ```
 Then `debug` var will be bound to corresponding command option value, and can be used in any function.
