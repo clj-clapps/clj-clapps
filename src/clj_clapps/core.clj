@@ -152,12 +152,14 @@
   (->> (map meta->option opts)
        (into [])))
 
-(defn- global-options [ns]
+(defn- global-options [ns include-help?]
   (concat
    (->> (ns-interns ns)
         (map (comp meta second))
         (filter :option?))
-   [(meta #'verbose) (meta #'help)]))
+   (if include-help?
+     [(meta #'verbose) (meta #'help)]
+     [(meta #'verbose)])))
 
 (defn- sub-commands [ns]
   (->> (ns-interns ns)
@@ -165,26 +167,29 @@
        (filter :command?)))
 
 (defn- usage [cmd-name cmd-desc opts-summary sub-cmds args global-opts-summary]
-  (->> [cmd-desc
-        ""
-        (str "Usage: " cmd-name " [options] " (when (seq sub-cmds) "command")
-             (str/join " " (map :name args)))
-        (when (seq args)
-          ["" "Arguments:"
-           (for [arg args]
-             (format "\t%s\t%s" (:name arg) (:doc arg)))])
-        (when opts-summary
-          ["" "Options:" opts-summary ""])
-        (when (seq sub-cmds)
-          (cons "Commands:"
-                (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))
-        (when global-opts-summary
-          ["" "Global-Options:" global-opts-summary ""])]
-       (flatten)
-       (str/join \newline)))
+  (let [[opts-summary global-opts-summary]
+        (if (seq sub-cmds) [opts-summary global-opts-summary]
+            [(str opts-summary \newline  global-opts-summary) nil])]
+    (->> [cmd-desc
+          ""
+          (str "Usage: " cmd-name " [options] " (when (seq sub-cmds) "command")
+               (str/join " " (map :name args)))
+          (when (seq args)
+            ["" "Arguments:"
+             (for [arg args]
+               (format "\t%s\t%s" (:name arg) (:doc arg)))])
+          (when opts-summary
+            ["" "Options:" opts-summary ""])
+          (when (seq sub-cmds)
+            (cons "Commands:"
+                  (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))
+          (when global-opts-summary
+            ["" "Global-Options:" global-opts-summary ""])]
+         (flatten)
+         (str/join \newline))))
 
 (defn- error-msg [errors]
-  (str "The following errors occurred while parsing your command:\n\n"
+  (str "Invalid command options and/or arguments:" \newline
        (str/join \newline errors)))
 
 (defn- set-options! [opts values]
@@ -234,16 +239,21 @@
                  :cmd-args (concat arguments (map #(get options (keyword (:name %))) opt-args))})))))
 
 (defn- parse-main-args [ns args]
-  (let [global-opts (global-options ns)
-        sub-cmds (sub-commands ns)
+  (let [sub-cmds (sub-commands ns)
+        multi? (> (count sub-cmds) 1)
+        global-opts (global-options ns multi?)
         {:keys [options arguments errors summary]}
         (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)]
     (cond
       (empty? sub-cmds) {:exit-message
-                         (format "No commands defined in ns:%s, at least one (defcmd ...) should be defined" (name ns))}
-      (= 1 (count sub-cmds)) {:command (first sub-cmds)
-                              :arguments args :main? true}
-      (:help options) {:exit-message (usage (ns-name ns) "" nil sub-cmds [] summary) :ok? true}
+                         (format "No commands defined in ns:%s, at least one (defcmd ...) should be defined" (ns-name ns))}
+      (not multi?) {:command (first sub-cmds)
+                    :global-opts global-opts
+                    :options options
+                    :arguments args :main? true
+                    :summary summary}
+      (:help options) {:exit-message (usage (ns-name ns) "" nil sub-cmds [] summary)
+                       :ok? true}
       errors {:exit-message (error-msg errors)}
       (empty? (first arguments)) {:exit-message
                                   (usage (ns-name ns) "Missing command" nil sub-cmds [] summary)}

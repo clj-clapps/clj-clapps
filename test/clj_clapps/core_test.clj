@@ -46,7 +46,7 @@
         parse-main-args #'clj-clapps.core/parse-main-args
         parse-cmd-args #'clj-clapps.core/parse-cmd-args]
     (testing "discover global options "
-      (let [opts (global-options this-ns)]
+      (let [opts (global-options this-ns true)]
         (is (some #(= "use-proxy" (name (:name %))) opts))))
     (testing "discover commands:"
       (let [cmds (#'clj-clapps.core/sub-commands this-ns)]
@@ -57,7 +57,7 @@
                   ["-v" nil "Verbosity level"]
                   ["-h" "--help" "Print help"]]
                  (map (partial take 3) (#'clj-clapps.core/opts-meta->cli-options
-                                        (global-options this-ns))))))
+                                        (global-options this-ns true))))))
     (testing "parse args:"
       (let [r (parse-main-args this-ns ["-h"])]
         (is (:exit-message r))
@@ -75,6 +75,7 @@
 
 (cl/defcmd dummy-cmd "dummy command"
   [arg1 arg2 & [^{:short "-o" :parse-fn read-string
+                  :default-fn (constantly (LocalDate/now))
                   :validate [int? "must be an int"]} opt1
                 ^{:short "-p" :enum ["A" "B"]} opt2
                 ^{:validate [#(= "w" %) "must be w"]} opt3]]
