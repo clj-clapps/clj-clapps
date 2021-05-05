@@ -1,28 +1,10 @@
 (ns clj-clapps.core-test
   (:require [clj-clapps.core :as cl]
+            [clj-clapps.util :as util]
             [clojure.string :as str]
             [clojure.test :refer :all])
   (:import clojure.lang.ExceptionInfo
            [java.time LocalDate LocalDateTime]))
-
-(defn alike? [x y]
-  (cond
-    (map? x) (and (map? y)
-                  (every? (fn [[k v]] (if (fn? v) (v (get y k)) (alike? v (get y k)))) x))
-    (coll? x) (and (coll? y) (or (and (empty? x) (empty? y))
-                                 (and (alike? (first x) (first y)) (alike? (rest x) (rest y)))))
-    (fn? x) (if (fn? y) (identical? x y) (x y))
-    :else (= x y)))
-
-(defmethod assert-expr 'like? [msg form]
-  (let [expected (nth form 1)
-        expr (nth form 2)]
-    `(let [expected# ~expected
-           actual# ~expr
-           res# (alike? expected# actual#)]
-       (if (true? res#)
-         (do-report {:type :pass :message ~msg :expected expected# :actual actual#})
-         (do-report {:type :fail :message ~msg :expected expected# :actual actual#})))))
 
 (cl/defopt use-proxy "my global option" :short "-p" :default false)
 

@@ -131,14 +131,14 @@ Then `debug` var will be bound to corresponding command option value, and can be
 The following metadata options are supported in both global and command options:
 
 * `:short` The short prefix string of the option. Required. e.g. `-o`
-* `:long?` Defaults to true. It's used to disable the long option prefix. By default the l*refix matches the option name prefixed with `--`. e.g. `--debug DEBUG` above. The long pr*is also implicitly disabled for boolean options as derived by the :default value or endin*`?`
+* `:long?` Defaults to true. It's used to disable the long option prefix. By default the long prefix is generated as the option name prefixed with `--` e.g. `--debug DEBUG` above. The long prefix is implicitly disabled for boolean options as inferred from the :default value or the suffix `?`
 * `:doc` Option documentation, used when printing the command usage.
 * `:default` Option's default value.
-* `:default-fn` Option's default value function.
+* `:default-fn` A one-arg function that returns the option's default value, given the parsed options.
 * `:validate` A tuple of validation function and message. e.g. `[int? "must be a number"]`
 * `:enum` A vector of allowed values. e.g. `:enum ["AM" "PM"]`
-* `:parse-fn` A function to convert the input string into the desired type
-* `:env` A string representing the environment variable to use as a default value. Equivalent to `:default-fn #(System/getenv "SOME_ENV_VAR")`
+* `:parse-fn` A function that converts the input string into the desired type
+* `:env` A string representing the environment variable to use as a default value. Equivalent to `:default-fn (fn[__] (System/getenv "SOME_ENV_VAR"))`
     
 The following metadata options are supported in command arguments.
 

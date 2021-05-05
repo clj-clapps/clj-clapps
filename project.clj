@@ -1,4 +1,4 @@
-(defproject org.clojars.clj-clapps/clj-clapps "0.4.10"
+(defproject org.clojars.clj-clapps/clj-clapps "0.4.10-SNAPSHOT"
   :description "A library to create command line apps with ease and elegance"
   :url "https://github.com/clj-clapps/clj-clapps"
   :license {:name "Eclipse Public License"
