@@ -131,14 +131,14 @@ Then `debug` var will be bound to corresponding command option value, and can be
 The following metadata options are supported in both global and command options:
 
 * `:short` The short prefix string of the option. Required. e.g. `-o`
-* `:long?` Defaults to true. It's used to disable the long option prefix. By default the long prefix is generated as the option name prefixed with `--` e.g. `--debug DEBUG` above. The long prefix is implicitly disabled for boolean options as inferred from the :default value or the suffix `?`
+* `:long?` Defaults to true. It's used to disable the long option prefix. By default the long prefix is generated as the option name prefixed with `--` e.g. `--debug DEBUG` above. The long prefix is implicitly disabled for boolean options (as inferred from the `:default` value or the suffix: `?`)
 * `:doc` Option documentation, used when printing the command usage.
 * `:default` Option's default value.
 * `:default-fn` A one-arg function that returns the option's default value, given the parsed options.
 * `:validate` A tuple of validation function and message. e.g. `[int? "must be a number"]`
 * `:enum` A vector of allowed values. e.g. `:enum ["AM" "PM"]`
 * `:parse-fn` A function that converts the input string into the desired type
-* `:env` A string representing the environment variable to use as a default value. Equivalent to `:default-fn (fn[__] (System/getenv "SOME_ENV_VAR"))`
+* `:env` A string representing the environment variable to use as a default value. Equivalent to `:default-fn (fn[_] (System/getenv "SOME_ENV_VAR"))`
     
 The following metadata options are supported in command arguments.
 
@@ -148,9 +148,44 @@ The following metadata options are supported in command arguments.
 * `:enum` A vector of allowed values. e.g. `:enum ["AM" "PM"]`
 * `:parse-fn` A function to convert the input string into the desired type
 
+### Usage With [Babashka](https://babashka.org/)
+
+[@borkdude](https://github.com/borkdude) has shown that this library can be used with [babashka](https://github.com/borkdude). Please see the [demo](https://github.com/clj-clapps/clj-clapps/issues/1) for more details.
+
+In short, the [spartan.spec](https://github.com/borkdude/spartan.spec) needs to be added as dependency. 
+
+```clojure
+#!/usr/bin/env bb
+
+(require '[babashka.deps :as deps])
+
+(deps/add-deps '{:deps {org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.10"}
+                        borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
+                                               :sha "12947185b4f8b8ff8ee3bc0f19c98dbde54d4c90"}}})
+
+(require 'spartan.spec) ;; defines clojure.spec.alpha
+
+(ns my-cool-cli
+  (:require [clj-clapps.core :as cl :refer[defcmd defopt]]))
+
+;; define your command function
+(defcmd main-cmd
+  "My cool command help description"
+  [^{:doc "Argument 1 of cool command" } arg1
+   ;; optional arguments vector become command options
+   & [^{:doc "Option 1 of cool command" :short "-o" } opt1]]
+  ;; do something with arg1 and opt1 
+  (prn arg1 opt1))
+
+;; execute your command
+(when (= *file* (System/getProperty "babashka.file"))
+  (cl/exec! 'my-cool-cli *command-line-args*))
+```
+
+
 ## License
 
-Copyright © 2018 clj-clapps
+Copyright © 2021 clj-clapps
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
