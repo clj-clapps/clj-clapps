@@ -40,15 +40,15 @@ Declare and specify your **command** function with **defcmd**:
 
 (ns my-cool-cli
   (:gen-class)
-  (:require [clj-clapps/core :as cl :refer[defcmd defopt]]))
-    
+  (:require [clj-clapps.core :as cl :refer[defcmd defopt]]))
+
 ;; define your command function
 (defcmd main-cmd
   "My cool command help description"
   [^{:doc "Argument 1 of cool command" } arg1
   ;; optional arguments vector become command options
    & [^{:doc "Option 1 of cool command" :short "-o" } opt1]]
-  ;; do something with arg1 and opt1 
+  ;; do something with arg1 and opt1
   )
 
 ;; execute your command
@@ -83,7 +83,7 @@ e.g.
 ```clojure
 (ns service
   (:gen-class)
-  (:require [clj-clapps/core :as cl :refer[defcmd defopt]])
+  (:require [clj-clapps.core :as cl :refer[defcmd defopt]])
   ;;...
   )
 ;; ...
@@ -106,11 +106,10 @@ Usage service [global-options] start [options] port
 
 Arguments:
 	port	start action
-    
+
 Options:
 	-h  --help	Prints command help
 ```
-
 
 
 ### Global Options
@@ -139,7 +138,7 @@ The following metadata options are supported in both global and command options:
 * `:enum` A vector of allowed values. e.g. `:enum ["AM" "PM"]`
 * `:parse-fn` A function that converts the input string into the desired type
 * `:env` A string representing the environment variable to use as a default value. Equivalent to `:default-fn (fn[_] (System/getenv "SOME_ENV_VAR"))`
-    
+
 The following metadata options are supported in command arguments.
 
 
@@ -152,7 +151,7 @@ The following metadata options are supported in command arguments.
 
 [@borkdude](https://github.com/borkdude) has shown that this library can be used with [babashka](https://github.com/borkdude). Please see the [demo](https://github.com/clj-clapps/clj-clapps/issues/1) for more details.
 
-In short, the [spartan.spec](https://github.com/borkdude/spartan.spec) needs to be added as dependency. 
+In short, the [spartan.spec](https://github.com/borkdude/spartan.spec) needs to be added as dependency.
 
 ```clojure
 #!/usr/bin/env bb
@@ -174,7 +173,7 @@ In short, the [spartan.spec](https://github.com/borkdude/spartan.spec) needs to 
   [^{:doc "Argument 1 of cool command" } arg1
    ;; optional arguments vector become command options
    & [^{:doc "Option 1 of cool command" :short "-o" } opt1]]
-  ;; do something with arg1 and opt1 
+  ;; do something with arg1 and opt1
   (prn arg1 opt1))
 
 ;; execute your command
@@ -189,4 +188,4 @@ Copyright © 2021 clj-clapps
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
-    
+
