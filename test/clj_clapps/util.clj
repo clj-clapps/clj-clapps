@@ -1,7 +1,6 @@
 (ns clj-clapps.util
   (:require  [clojure.test :as t]))
 
-
 (defn alike? [x y]
   (cond
     (map? x) (and (map? y)
