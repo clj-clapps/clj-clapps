@@ -102,7 +102,7 @@
   :password?	If true, it will hide the user input
   "
   {:arglists '([message [options*]])}
-  [msg & {:keys[password?]}]
+  [msg & {:keys [password?]}]
   (if-let [console (System/console)]
     (if password?
       (str/join (.readPassword console msg (into-array [])))
@@ -223,7 +223,7 @@
 
 (defn- parse-cmd-args [cmd args main? global-opts-summary]
   (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
-        {:keys[options arguments errors summary]}
+        {:keys [options arguments errors summary]}
         (cli/parse-opts args (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
     (cond
       (:help options)
@@ -269,11 +269,11 @@
   "Parses the arguments and executes the specified command"
   {:arglists '([main-class-ns arguments])}
   [ns args]
-  (let [{:keys[exit-message arguments options command ok? global-opts main? summary]}
+  (let [{:keys [exit-message arguments options command ok? global-opts main? summary]}
         (parse-main-args ns args)
         _ (when exit-message
             (exit (if ok? 0 1) exit-message))
-        {:keys[exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments main? summary)]
+        {:keys [exit-message ok? cmd-fn cmd-args]} (parse-cmd-args command arguments main? summary)]
     (when exit-message
       (exit (if ok? 0 1) exit-message))
     (set-options! global-opts options)

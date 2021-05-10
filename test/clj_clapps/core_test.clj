@@ -54,7 +54,6 @@
     (is (thrown? Exception (eval '(clj-clapps.core/defopt enum-opt "Choice option" :short "-c" :enum "a,b,c"))))
     (is (some? (eval '(clj-clapps.core/defopt enum-opt "Choice option" :short "-c" :enum ["a" "b" "c"]))))))
 
-
 (cl/defcmd dummy-cmd "dummy command"
   [arg1 arg2 & [^{:short "-o" :parse-fn read-string
                   :default-fn (constantly (LocalDate/now))
