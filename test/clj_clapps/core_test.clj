@@ -66,7 +66,7 @@
   (testing "parsing sub commands"
     (let [cmd #'dummy-cmd
           parse-cmd-args #'clj-clapps.core/parse-cmd-args]
-      (is (like? {:exit-message #(str/includes? % "dummy-cmd [options] arg1 arg2")
+      (is (like? {:exit-message #(str/includes? % "dummy-cmd [OPTIONS] ARG1 ARG2")
                   :ok? true}
                  (parse-cmd-args (meta cmd) ["-h"] nil nil)))
       (is (like? {:exit-message #(str/includes? % "Wrong number of arguments. Expected 2")
@@ -82,7 +82,7 @@
 (deftest cmd-execs
   (testing "parsing main commands"
     (let [parse-main-args #'clj-clapps.core/parse-main-args]
-      (is (like? {:exit-message #(str/includes? % "core-test [options]")}
+      (is (like? {:exit-message #(str/includes? % "core-test [OPTIONS]")}
                  (parse-main-args this-ns ["-h"])))
       (is (like? {:exit-message #(str/includes? % "must be a integer")}
                  (parse-main-args this-ns ["-b" "x"])))
