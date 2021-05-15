@@ -172,12 +172,12 @@
             [(str opts-summary \newline  global-opts-summary) nil])]
     (->> [cmd-desc
           ""
-          (str "Usage: " cmd-name " [options] " (when (seq sub-cmds) "command")
-               (str/join " " (map :name args)))
+          (str "Usage: " cmd-name " [OPTIONS] " (when (seq sub-cmds) "command")
+               (str/join " " (map (comp str/upper-case :name) args)))
           (when (seq args)
             ["" "Arguments:"
              (for [arg args]
-               (format "\t%s\t%s" (:name arg) (:doc arg)))])
+               (format "\t%s\t%s" (str/upper-case (:name arg)) (or (:doc arg) "")))])
           (when opts-summary
             ["" "Options:" opts-summary ""])
           (when (seq sub-cmds)
@@ -229,7 +229,7 @@
       (:help options)
       {:exit-message (usage (if main?
                               (-> cmd :ns ns-name)
-                              (str (-> cmd :ns ns-name) " [global-options] " (:name cmd)))
+                              (str (-> cmd :ns ns-name) " [GLOBAL-OPTIONS] " (:name cmd)))
                             (:doc cmd) summary [] req-args global-opts-summary) :ok? true}
       errors {:exit-message (error-msg errors)}
       :else (let [{:keys [arguments errors]} (validate-args req-args arguments)]
