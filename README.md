@@ -40,7 +40,7 @@ Declare and specify your **command** function with **defcmd**:
 
 (ns my-cool-cli
   (:gen-class)
-  (:require [clj-clapps.core :as cl :refer[defcmd defopt]]))
+  (:require [clj-clapps.core :as cl :refer [defcmd defopt]]))
 
 ;; define your command function
 (defcmd main-cmd
@@ -83,7 +83,7 @@ e.g.
 ```clojure
 (ns service
   (:gen-class)
-  (:require [clj-clapps.core :as cl :refer[defcmd defopt]])
+  (:require [clj-clapps.core :as cl :refer [defcmd defopt]])
   ;;...
   )
 ;; ...
@@ -110,7 +110,6 @@ Arguments:
 Options:
 	-h  --help	Prints command help
 ```
-
 
 ### Global Options
 
