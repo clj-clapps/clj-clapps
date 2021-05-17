@@ -28,7 +28,7 @@ Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.10"}"
+org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.10"}
 ;; ...
 
 ```
