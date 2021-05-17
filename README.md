@@ -9,7 +9,7 @@ Inspired by Python Typer, and built on top of Clojure's [tools.cli](https://gith
 
 
 ```clj
-[org.clojars.clj-apps/clj-clapps "0.4.10"]
+[org.clojars.clj-clapps/clj-clapps "0.4.10"]
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ Lein:
 
 ```clojure
 ;; ...
-[org.clojars.clj-apps/clj-clapps "0.4.10"]
+[org.clojars.clj-clapps/clj-clapps "0.4.10"]
 ;; ...
 ```
 
@@ -28,7 +28,7 @@ Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-apps/clj-clapps {:mvn/version "0.4.10"}
+org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.10"}"
 ;; ...
 
 ```
