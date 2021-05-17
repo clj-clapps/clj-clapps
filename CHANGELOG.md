@@ -20,31 +20,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.4] — 2021-04-21
 
-## [0.4.3] — 2021-04-21
-
-## [0.4.2] — 2021-04-21
-
-## [0.4.1] — 2021-04-20
-
-## [0.0.1] — 2021-04-20
 ### Added
-- _CHANGELOG.md_ created.
-### Changed
-- Something has been changed.
-### Fixed
-- Something has been fixed.
-### Removed
-- Something has been removed.
+- Initial release
 
 
-[0.0.1]: https://github.com/rinconj/clj-clapps/compare/0.0.0...0.0.1
-[0.4.1]: https://github.com/rinconj/clj-clapps/compare/0.0.1...0.4.1
-[0.4.2]: https://github.com/rinconj/clj-clapps/compare/0.4.1...0.4.2
-[0.4.3]: https://github.com/rinconj/clj-clapps/compare/0.4.2...0.4.3
-[0.4.4]: https://github.com/rinconj/clj-clapps/compare/0.4.3...0.4.4
-[0.4.5]: https://github.com/rinconj/clj-clapps/compare/0.4.4...0.4.5
-[0.4.6]: https://github.com/rinconj/clj-clapps/compare/0.4.5...0.4.6
-[0.4.7]: https://github.com/rinconj/clj-clapps/compare/0.4.6...0.4.7
-[0.4.8]: https://github.com/rinconj/clj-clapps/compare/0.4.7...0.4.8
-[0.4.10]: https://github.com/rinconj/clj-clapps/compare/0.4.8...0.4.10
-[Unreleased]: https://github.com/rinconj/clj-clapps/compare/0.4.10...HEAD
+[0.4.4]: https://github.com/clj-clapps/clj-clapps/compare/0.4.3...0.4.4
+[0.4.5]: https://github.com/clj-clapps/clj-clapps/compare/0.4.4...0.4.5
+[0.4.6]: https://github.com/clj-clapps/clj-clapps/compare/0.4.5...0.4.6
+[0.4.7]: https://github.com/clj-clapps/clj-clapps/compare/0.4.6...0.4.7
+[0.4.8]: https://github.com/clj-clapps/clj-clapps/compare/0.4.7...0.4.8
+[0.4.10]: https://github.com/clj-clapps/clj-clapps/compare/0.4.8...0.4.10
+[Unreleased]: https://github.com/clj-clapps/clj-clapps/compare/0.4.10...HEAD
