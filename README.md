@@ -9,7 +9,7 @@ Inspired by Python Typer, and built on top of Clojure's [tools.cli](https://gith
 
 
 ```clj
-[org.clojars.clj-apps/clj-clapps "0.4.10"]
+[org.clojars.clj-clapps/clj-clapps "0.4.10"]
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ Lein:
 
 ```clojure
 ;; ...
-[org.clojars.clj-apps/clj-clapps "0.4.10"]
+[org.clojars.clj-clapps/clj-clapps "0.4.10"]
 ;; ...
 ```
 
@@ -28,7 +28,7 @@ Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-apps/clj-clapps {:mvn/version "0.4.10"}
+org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.10"}"
 ;; ...
 
 ```
@@ -40,7 +40,7 @@ Declare and specify your **command** function with **defcmd**:
 
 (ns my-cool-cli
   (:gen-class)
-  (:require [clj-clapps.core :as cl :refer[defcmd defopt]]))
+  (:require [clj-clapps.core :as cl :refer [defcmd defopt]]))
 
 ;; define your command function
 (defcmd main-cmd
@@ -83,7 +83,7 @@ e.g.
 ```clojure
 (ns service
   (:gen-class)
-  (:require [clj-clapps.core :as cl :refer[defcmd defopt]])
+  (:require [clj-clapps.core :as cl :refer [defcmd defopt]])
   ;;...
   )
 ;; ...
@@ -110,7 +110,6 @@ Arguments:
 Options:
 	-h  --help	Prints command help
 ```
-
 
 ### Global Options
 
