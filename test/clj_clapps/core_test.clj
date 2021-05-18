@@ -66,9 +66,9 @@
   (testing "parsing sub commands"
     (let [cmd #'dummy-cmd
           parse-cmd-args #'clj-clapps.core/parse-cmd-args]
-      (is (like? {:exit-message #(str/includes? % "dummy-cmd [OPTIONS] ARG1 ARG2")
+      (is (like? {:exit-message #(str/includes? % "[GLOBAL-OPTIONS] dummy-cmd [OPTIONS] ARG1 ARG2")
                   :ok? true}
-                 (parse-cmd-args (meta cmd) {:arguments ["-h"]})))
+                 (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "\t-v\t\tVerbosity Level"})))
       (is (like? {:exit-message #(str/includes? % "Wrong number of arguments. Expected 2")
                   :ok? nil}
                  (parse-cmd-args (meta cmd) {:arguments []})))
