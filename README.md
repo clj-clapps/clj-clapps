@@ -65,7 +65,7 @@ $ lein run -m my-cool-cli -h
 My cool command help description
 
 Usage:
-my-cool-cli [options] arg1
+my-cool-cli [OPTIONS] ARG1
 
 Arguments:
     arg1	Argument 1 of cool command
@@ -82,6 +82,7 @@ e.g.
 
 ```clojure
 (ns service
+  "Multi-command tool description"
   (:gen-class)
   (:require [clj-clapps.core :as cl :refer [defcmd defopt]])
   ;;...
@@ -102,13 +103,17 @@ Sub commands help option is implicitly added with *-h* or **--help**:
 `clj -M -m service start -h` will print:
 
 ```bash
-Usage service [global-options] start [options] port
+start action
+
+Usage service [GLOBAL-OPTIONS] start [OPTIONS] PORT
 
 Arguments:
 	port	start action
 
 Options:
 	-h  --help	Prints command help
+Global Options:
+	-v		Verbosity level
 ```
 
 ### Global Options
