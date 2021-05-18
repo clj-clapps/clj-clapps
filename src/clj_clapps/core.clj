@@ -1,4 +1,5 @@
 (ns clj-clapps.core
+  "Core implementation"
   (:require [clj-clapps.spec :as spec]
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
@@ -166,27 +167,29 @@
        (map (comp meta second))
        (filter :command?)))
 
-(defn- usage [cmd-name cmd-desc opts-summary sub-cmds args global-opts-summary]
-  (let [[opts-summary global-opts-summary]
-        (if (seq sub-cmds) [opts-summary global-opts-summary]
-            [(str opts-summary \newline  global-opts-summary) nil])]
-    (->> [cmd-desc
-          ""
-          (str "Usage: " cmd-name " [OPTIONS] " (when (seq sub-cmds) "command")
-               (str/join " " (map (comp str/upper-case :name) args)))
-          (when (seq args)
-            ["" "Arguments:"
-             (for [arg args]
-               (format "\t%s\t%s" (str/upper-case (:name arg)) (or (:doc arg) "")))])
-          (when opts-summary
-            ["" "Options:" opts-summary ""])
-          (when (seq sub-cmds)
-            (cons "Commands:"
-                  (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))
-          (when global-opts-summary
-            ["" "Global-Options:" global-opts-summary ""])]
-         (flatten)
-         (str/join \newline))))
+(defn- usage [ns desc options & {:keys [sub-cmds global-options cmd-name args]}]
+  (->> [desc
+        ""
+        (->> ["Usage:" (ns-name ns)
+             (when global-options "[GLOBAL-OPTIONS]")
+             cmd-name (when options "[OPTIONS]") (when (seq sub-cmds) "COMMAND")
+              (map (comp str/upper-case :name) args)]
+             flatten
+             (filter some?)
+             (str/join " "))
+        (when (seq args)
+          ["" "Arguments:"
+           (for [arg args]
+             (format "\t%s\t%s" (str/upper-case (:name arg)) (or (:doc arg) "")))])
+        (when options
+          ["" "Options:" options ""])
+        (when (seq sub-cmds)
+          (cons "Commands:"
+                (map #(str "\t" (name (:name %)) "\t" (:doc %)) sub-cmds)))
+        (when global-options
+          ["" "Global-Options:" global-options ""])]
+       (flatten)
+       (str/join \newline)))
 
 (defn- error-msg [errors]
   (str "Invalid command options and/or arguments:" \newline
@@ -228,10 +231,15 @@
                         (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
     (cond
       (:help options)
-      {:exit-message (usage (if main?
-                              (-> cmd :ns ns-name)
-                              (str (-> cmd :ns ns-name) " [GLOBAL-OPTIONS] " (:name cmd)))
-                            (:doc cmd) summary [] req-args (:summary main-args-opts)) :ok? true}
+      {:exit-message (if main?
+                       (usage (:ns cmd) (:doc cmd)
+                              (str summary \newline (:summary main-args-opts))
+                              :args req-args)
+                       (usage (:ns cmd) (:doc cmd) summary
+                              :global-options (:summary main-args-opts)
+                              :args req-args
+                              :cmd-name (:name cmd)))
+       :ok? true}
       errors {:exit-message (error-msg errors)}
       :else (let [{:keys [arguments errors]} (validate-args req-args arguments)]
               (if (seq errors)
@@ -253,11 +261,13 @@
                           :global-opts global-opts
                           :arguments args
                           :main? true)
-      (:help options) {:exit-message (usage (ns-name ns) "" nil sub-cmds [] summary)
+      (:help options) {:exit-message (usage ns (-> ns the-ns meta :doc) nil
+                                            :sub-cmds sub-cmds :global-options summary)
                        :ok? true}
       errors {:exit-message (error-msg errors)}
       (empty? (first arguments)) {:exit-message
-                                  (usage (ns-name ns) "Missing command" nil sub-cmds [] summary)}
+                                  (usage ns "Missing command" nil
+                                         :sub-cmds sub-cmds :global-options summary)}
       :else (if-let [cmd (first (filter #(= (first arguments) (-> % :name name)) sub-cmds))]
               (assoc main-args-opts
                      :command cmd

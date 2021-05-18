@@ -77,17 +77,23 @@
       (is (like? {:exit-message #(str/includes? % "must be an int")}
                  (parse-cmd-args (meta cmd) {:arguments ["-o" "xyz" "a" "b"] :main? false})))
       (is (like? {:cmd-fn some?}
-                 (parse-cmd-args (meta cmd) {:arguments ["-o" "5" "a" "b"] :main? false}))))))
+                 (parse-cmd-args (meta cmd) {:arguments ["-o" "5" "a" "b"] :main? false})))
+      (is (like? {:exit-message #(and (str/includes? % "[GLOBAL-OPTIONS]")
+                                      (str/includes? % "Global-Options:\n")
+                                      (str/includes? % "...global-options"))}
+                 (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "...global-options..."}))))))
 
 (deftest cmd-execs
   (testing "parsing main commands"
     (let [parse-main-args #'clj-clapps.core/parse-main-args]
-      (is (like? {:exit-message #(str/includes? % "core-test [OPTIONS]")}
+      (is (like? {:exit-message #(str/includes? % "core-test [GLOBAL-OPTIONS] COMMAND")}
                  (parse-main-args this-ns ["-h"])))
       (is (like? {:exit-message #(str/includes? % "must be a integer")}
                  (parse-main-args this-ns ["-b" "x"])))
       (is (like? {:command some?}
-                 (parse-main-args this-ns ["-b" "4" "dummy-cmd" "a" "b"])))))
+                 (parse-main-args this-ns ["-b" "4" "dummy-cmd" "a" "b"])))
+      (is (like? {:command some?}
+                 (parse-main-args this-ns ["dummy-cmd" "-h"])))))
 
   (testing "executing commands"
     (with-redefs [clj-clapps.core/exit #(throw (ex-info "Cmd Exit" {:status %1 :msg %2}))]
