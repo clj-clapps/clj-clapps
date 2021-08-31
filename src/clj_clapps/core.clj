@@ -1,5 +1,4 @@
 (ns clj-clapps.core
-  "Core implementation"
   (:require [clj-clapps.spec :as spec]
             [clojure.spec.alpha :as s]
             [clojure.string :as str]
@@ -7,22 +6,13 @@
             [clojure.walk :as walk])
   (:import [java.io File PrintStream]))
 
-(defn- eval-symbols [x]
-  (cond
-    (or (symbol? x) (list? x)) (eval x)
-    (instance? clojure.lang.Cons x) (eval x)
-    :else x))
-
-(defn- eval-meta [x]
-  (vary-meta x (partial walk/prewalk eval-symbols)))
-
 (defn- arg-meta [arg]
   (assoc (meta arg) :name (name arg)))
 
 (defn- cmd-params-opts [args]
   (let [[req-args [_ & [opt-args]]] (split-with #(not= (symbol "&") %) args)]
-    [(map arg-meta req-args)
-     (map arg-meta opt-args)]))
+    [(mapv arg-meta req-args)
+     (mapv arg-meta opt-args)]))
 
 (defmacro defcmd
   "Like defn, but the resulting function can be invoked from the command line
@@ -44,10 +34,10 @@
   :parse-fn    A function to convert the option value string to the desired type"
   {:arglists '([name docstring? [params*] body])}
   [cmd args & body]
-  (let [doc# (when (string? args) args)
-        [args# body#] (if (string? args) [(first body) (rest body)] [args body])
-        args# (into [] (walk/prewalk eval-meta args#))
-        [req-args-meta opt-args-meta] (cmd-params-opts args#)]
+  (let [doc (when (string? args) args)
+        [args body] (if (string? args) [(first body) (rest body)] [args body])
+        args (into [] (walk/prewalk #(vary-meta % eval) args))
+        [req-args-meta opt-args-meta] (cmd-params-opts args)]
     (doseq [arg req-args-meta]
       (when-let [probs (s/explain-data ::spec/param-meta (dissoc arg :name))]
         (throw (Exception. (format "Invalid param %s metadata:\n%s" (:name arg)
@@ -56,8 +46,8 @@
       (when-let [probs (s/explain-data ::spec/opt-args (->> (dissoc opt :name) (apply concat)))]
         (throw (Exception. (format "Invalid param %s metadata:\n%s" (:name opt)
                                    (with-out-str (s/explain-out probs)))))))
-    `(defn ~(vary-meta cmd assoc :command? true :doc doc#) ~args#
-       ~@body#)))
+    `(defn ~(vary-meta cmd assoc :command? true :doc doc) ~args
+       ~@body)))
 
 (defmacro defopt
   "Declares a global variable that's exposed as a command line option.
@@ -171,8 +161,8 @@
   (->> [desc
         ""
         (->> ["Usage:" (ns-name ns)
-             (when global-options "[GLOBAL-OPTIONS]")
-             cmd-name (when options "[OPTIONS]") (when (seq sub-cmds) "COMMAND")
+              (when global-options "[GLOBAL-OPTIONS]")
+              cmd-name (when options "[OPTIONS]") (when (seq sub-cmds) "COMMAND")
               (map (comp str/upper-case :name) args)]
              flatten
              (filter some?)
