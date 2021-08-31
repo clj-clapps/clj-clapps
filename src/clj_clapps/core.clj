@@ -32,16 +32,16 @@
   (defcmd say-hello \"Say Hello command\"
       [name & [^{:short \"-l\" :enum [\"en\" \"es\"] :default \"en\"} lang]]
       ;; do something with name and lang
-      )
+   )
 
   The arguments metadata supports the following attributes:
-  :short			The short option prefix, e.g \"-o\"
-  :long?			Allow long name option. Defaults to true. Long name is generated from the argument name.
-  :default		The default value.
-  :default-fn	A function invoke to get the default value
-  :validate		A tuple like [validate-fn validate-msg] to validate the passed option value
-  :enum				A vector of allowed values
-  :parse-fn		A function to convert the option value string to the desired type"
+  :short       The short option prefix, e.g \"-o\"
+  :long?       Allow long name option. Defaults to true. Long name is generated from the argument name.
+  :default     The default value.
+  :default-fn  A function invoke to get the default value
+  :validate    A tuple like [validate-fn validate-msg] to validate the passed option value
+  :enum        A vector of allowed values
+  :parse-fn    A function to convert the option value string to the desired type"
   {:arglists '([name docstring? [params*] body])}
   [cmd args & body]
   (let [doc# (when (string? args) args)
@@ -66,13 +66,13 @@
   (defopt verbose \"Verbosity Level\" :long? false :short \"-v\" :update-fn inc)
 
   The following options are allowed, and have the semantics as the corresponding options in Clojure tools.cli
-  :short			The short option prefix, e.g \"-o\"
-  :long?			Allow long name option. Defaults to true. Long name is generated from the argument name.
-  :default		The default value.
-  :default-fn	A function invoke to get the default value
-  :validate		A tuple like [validate-fn validate-msg] to validate the passed option value
-  :enum				A vector of allowed values
-  :parse-fn		A function to convert the option value string to the desired type"
+  :short       The short option prefix, e.g \"-o\"
+  :long?       Allow long name option. Defaults to true. Long name is generated from the argument name.
+  :default     The default value.
+  :default-fn  A function invoke to get the default value
+  :validate    A tuple like [validate-fn validate-msg] to validate the passed option value
+  :enum        A vector of allowed values
+  :parse-fn    A function to convert the option value string to the desired type"
   {:arglists '([name docstring? [options*]])}
   [opt-name & [doc?  & opts]]
   (let [[doc? opts] (if (string? doc?) [doc? opts] [nil (cons doc? opts)])
@@ -100,7 +100,7 @@
 (defn prompt
   "Prompts for user input.
   The following options are supported:
-  :password?	If true, it will hide the user input
+  :password?  If true, it will hide the user input
   "
   {:arglists '([message [options*]])}
   [msg & {:keys [password?]}]
