@@ -99,3 +99,21 @@
     (with-redefs [clj-clapps.core/exit #(throw (ex-info "Cmd Exit" {:status %1 :msg %2}))]
       (is (thrown? ExceptionInfo (cl/exec! this-ns ["-h"])))
       (is (nil? (cl/exec! this-ns ["dummy-cmd" "1" "2"]))))))
+
+(cl/defcmd expr
+  "evaluates arithmetic expression"
+  [^{:parse-fn read-string :validate [number? "must be a number"]} n1
+   ^{:enum ["+" "-" "*" "/"]} op
+   ^{:parse-fn read-string :validate [number? "must be a number"]} n2]
+  (let [result (case op
+                  "+" (+ n1 n2)
+                  "-" (- n1 n2)
+                  "*" (* n1 n2)
+                  "/" (/ n1 n2))]
+    (println result)))
+
+(deftest error-handling
+  (testing "unhandled errors"
+    (with-redefs [clj-clapps.core/exit (fn [status _] (is (= 1 status)))
+                  clj-clapps.core/print-error (fn [msg] (is (str/includes? msg "Unhandled exception")))]
+      (cl/exec! this-ns ["-v" "expr" "3.1415" "/" "0"]))))

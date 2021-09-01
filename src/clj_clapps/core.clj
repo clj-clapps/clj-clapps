@@ -265,6 +265,13 @@
                      :global-opts global-opts)
               {:exit-message (str "Unknown command: " (first arguments))}))))
 
+(defn- generate-error-trace
+  [prefix e]
+  (let [tmp (File/createTempFile prefix "-error.trace")]
+    (spit tmp (ex-data e))
+    (.printStackTrace e (PrintStream. tmp))
+    (print-error (format " Error dump created in:%s" tmp))))
+
 (defn exec!
   "Parses the arguments and executes the specified command"
   {:arglists '([main-class-ns arguments])}
@@ -280,7 +287,8 @@
     (try
       (apply cmd-fn cmd-args)
       (catch Exception e
-        (let [tmp (File/createTempFile (name (ns-name ns)) "-error.trace")]
-          (spit tmp (ex-data e))
-          (.printStackTrace e (PrintStream. tmp))
-          (exit 1 (format "Oops something went wrong! Error dump created in:%s" tmp)))))))
+        (print-error (format "Unhandled exception when executing your command: %s" (.getMessage e)))
+        (if (pos? verbose)
+          (.printStackTrace e)
+          (generate-error-trace (name (ns-name ns)) e))
+        (exit 1 "")))))
