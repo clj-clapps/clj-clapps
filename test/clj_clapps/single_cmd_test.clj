@@ -27,5 +27,7 @@
       (is (like? {:exit-message #(str/includes? % "must be a number")}
                  (parse-cmd-args (meta cmd) {:arguments ["abc"] :main? true})))
       (is (like? {:exit-message #(str/includes? % "single-cmd-test [OPTIONS] ARG1")}
+                 (parse-cmd-args (meta cmd) {:arguments ["-h"] :main? true})))
+      (is (like? {:exit-message #(re-find #".+-v\s+Verbosity.*" %)}
                  (parse-cmd-args (meta cmd) {:arguments ["-h"] :main? true}))))))
 

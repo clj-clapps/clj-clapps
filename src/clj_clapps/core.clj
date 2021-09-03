@@ -218,7 +218,8 @@
   (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
         {:keys [options arguments errors summary] :as cmd-opts-args}
         (cli/parse-opts (:arguments main-args-opts)
-                        (opts-meta->cli-options (concat opt-args [(meta #'help)])))]
+                        (opts-meta->cli-options
+                         (concat opt-args [(meta #'verbose) (meta #'help)])))]
     (cond
       (:help options)
       {:exit-message (if main?

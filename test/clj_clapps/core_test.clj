@@ -106,10 +106,10 @@
    ^{:enum ["+" "-" "*" "/"]} op
    ^{:parse-fn read-string :validate [number? "must be a number"]} n2]
   (let [result (case op
-                  "+" (+ n1 n2)
-                  "-" (- n1 n2)
-                  "*" (* n1 n2)
-                  "/" (/ n1 n2))]
+                 "+" (+ n1 n2)
+                 "-" (- n1 n2)
+                 "*" (* n1 n2)
+                 "/" (/ n1 n2))]
     (println result)))
 
 (deftest error-handling
