@@ -1,0 +1,2 @@
+{:deps {org.clojars.clj-clapps/clj-clapps {:mvn/version "LATEST"}}
+ :paths ["src"]}
