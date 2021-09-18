@@ -16,7 +16,7 @@
 
 (defmacro defcmd
   "Like defn, but the resulting function can be invoked from the command line
-  The docstring? and the arguments metadata are used to generate the cli options.
+  The docstring? and the arguments metadata are used to generate the CLI options.
 
   Example:
   (defcmd say-hello \"Say Hello command\"
@@ -24,14 +24,21 @@
       ;; do something with name and lang
    )
 
-  The arguments metadata supports the following attributes:
+  The required arguments are converted to positional command arguments.
+  A vector of optional arguments can be specified, and will be converted to optional command arguments.
+
+  The following metadata can be used with required and optional arguments:
+  :doc         Argument documentation
+  :validate    A tuple like [validate-fn validate-msg] to validate the passed argument value
+  :enum        A vector of allowed values
+  :parse-fn    A function to convert the option value string to the desired type
+
+  The optional arguments additionally support the following metadata:
   :short       The short option prefix, e.g \"-o\"
   :long?       Allow long name option. Defaults to true. Long name is generated from the argument name.
   :default     The default value.
   :default-fn  A function invoke to get the default value
-  :validate    A tuple like [validate-fn validate-msg] to validate the passed option value
-  :enum        A vector of allowed values
-  :parse-fn    A function to convert the option value string to the desired type"
+  "
   {:arglists '([name docstring? [params*] body])}
   [cmd args & body]
   (let [doc (when (string? args) args)
@@ -51,7 +58,7 @@
 
 (defmacro defopt
   "Declares a global variable that's exposed as a command line option.
-  The docstring? and the options are used to generate the cli options.
+  The docstring? and the options are used to generate the CLI options.
   Example:
   (defopt verbose \"Verbosity Level\" :long? false :short \"-v\" :update-fn inc)
 
@@ -143,14 +150,12 @@
   (->> (map meta->option opts)
        (into [])))
 
-(defn- global-options [ns include-help?]
+(defn- global-options [ns]
   (concat
    (->> (ns-interns ns)
         (map (comp meta second))
         (filter :option?))
-   (if include-help?
-     [(meta #'verbose) (meta #'help)]
-     [(meta #'verbose)])))
+   [(meta #'verbose) (meta #'help)]))
 
 (defn- sub-commands [ns]
   (->> (ns-interns ns)
@@ -160,7 +165,7 @@
 (defn- usage [ns desc options & {:keys [sub-cmds global-options cmd-name args]}]
   (->> [desc
         ""
-        (->> ["Usage:" (ns-name ns)
+        (->> ["Usage:" (str ns)
               (when global-options "[GLOBAL-OPTIONS]")
               cmd-name (when options "[OPTIONS]") (when (seq sub-cmds) "COMMAND")
               (map (comp str/upper-case :name) args)]
@@ -190,47 +195,52 @@
     (alter-var-root (some #(when (= (name (:name %)) (name k))
                              (ns-resolve (:ns %) (:name %))) opts) (constantly v))))
 
-(defn- validate-arg [arg value]
-  (let [{:keys [parse-fn validate] :as meta-arg} arg
-        [value error] (if parse-fn
-                        (try
-                          [(parse-fn value)]
-                          (catch Exception e
-                            [nil (str "Failed parsing :" value " for argument" (:name arg))]))
-                        [value])]
-    (if error
-      [nil error]
-      (if (and validate (not ((first validate) value)))
-        [nil (or (second validate) (str "Invalid value: " value " for " (:name arg)))]
-        [value (when (nil? value) "Missing argument:" (str/upper-case (:name arg)))]))))
+(defn- parse-arg [arg arg-meta]
+  (let [validations (concat
+                     (some-> (:enum arg-meta)
+                             (enum-check-fn)
+                             (vector (format "Invalid argument %s. It should be one of: %s"
+                                             (:name arg-meta) (str/join "," (:enum arg-meta)))))
+                     (:validate arg-meta))
+        result (try
+                 {:value ((or (:parse-fn arg-meta) identity) arg)}
+                 (catch Exception e
+                   {:error (format "Error parsing argument %s :%s"
+                                   (:name arg-meta) (.getMessage e))}))]
+    (or (not-empty (select-keys result [:error]))
+        (some #(when-not ((first %) (:value result))
+                 {:error (format "Invalid argument %s. %s" (:name arg-meta) (second %))})
+              (partition 2 validations))
+        result)))
 
 (defn- validate-args [args arg-values]
   (let [[values errors] (if (not= (count args) (count arg-values))
                           [arg-values
                            [(format "Wrong number of arguments. Expected %d"  (count args))]]
-                          (->> (mapv validate-arg args arg-values)
-                               ((juxt (partial sequence (map first))
-                                      (partial sequence (map second))))))]
+                          (->> (mapv parse-arg arg-values args)
+                               ((juxt (partial mapv :value)
+                                      (partial mapv :error)))))]
     {:arguments values
      :errors (filter some? errors)}))
 
 (defn- parse-cmd-args [cmd {:keys [main?] :as main-args-opts}]
   (let [[req-args opt-args] (cmd-params-opts (-> cmd :arglists first))
-        {:keys [options arguments errors summary] :as cmd-opts-args}
-        (cli/parse-opts (:arguments main-args-opts)
-                        (opts-meta->cli-options
-                         (concat opt-args [(meta #'verbose) (meta #'help)])))]
+        {:keys [options arguments errors summary]
+         :as cmd-opts-args} (cli/parse-opts (:arguments main-args-opts)
+                                            (opts-meta->cli-options
+                                             (concat opt-args [(meta #'help)])))]
     (cond
-      (:help options)
-      {:exit-message (if main?
-                       (usage (:ns cmd) (:doc cmd)
-                              (str summary \newline (:summary main-args-opts))
-                              :args req-args)
-                       (usage (:ns cmd) (:doc cmd) summary
-                              :global-options (:summary main-args-opts)
-                              :args req-args
-                              :cmd-name (:name cmd)))
-       :ok? true}
+      (or (:help (:options main-args-opts))
+          (:help options)) {:exit-message
+                            (if main?
+                              (usage (:ns cmd) (:doc cmd)
+                                     (str summary \newline (:summary main-args-opts))
+                                     :args req-args)
+                              (usage (:ns cmd) (:doc cmd) summary
+                                     :global-options (:summary main-args-opts)
+                                     :args req-args
+                                     :cmd-name (:name cmd)))
+                            :ok? true}
       errors {:exit-message (error-msg errors)}
       :else (let [{:keys [arguments errors]} (validate-args req-args arguments)]
               (if (seq errors)
@@ -241,16 +251,16 @@
 (defn- parse-main-args [ns args]
   (let [sub-cmds (sub-commands ns)
         multi? (> (count sub-cmds) 1)
-        global-opts (global-options ns multi?)
-        {:keys [options arguments errors summary] :as main-args-opts}
-        (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)]
+        global-opts (global-options ns)
+        {:keys [options arguments errors summary]
+         :as main-args-opts} (cli/parse-opts args (opts-meta->cli-options global-opts) :in-order true)]
     (cond
       (empty? sub-cmds) {:exit-message
-                         (format "No commands defined in ns:%s, at least one (defcmd ...) should be defined" (ns-name ns))}
+                         (format "No commands defined in ns:%s, at least one (defcmd ...) should be defined" (str ns))}
       (not multi?) (assoc main-args-opts
                           :command (first sub-cmds)
                           :global-opts global-opts
-                          :arguments args
+                          :arguments arguments
                           :main? true)
       (:help options) {:exit-message (usage ns (-> ns the-ns meta :doc) nil
                                             :sub-cmds sub-cmds :global-options summary)
@@ -291,5 +301,5 @@
         (print-error (format "Unhandled exception when executing your command: %s" (.getMessage e)))
         (if (pos? verbose)
           (.printStackTrace e)
-          (generate-error-trace (name (ns-name ns)) e))
+          (generate-error-trace (str ns) e))
         (exit 1 "")))))

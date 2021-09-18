@@ -28,7 +28,7 @@
         parse-main-args #'clj-clapps.core/parse-main-args
         parse-cmd-args #'clj-clapps.core/parse-cmd-args]
     (testing "discover global options "
-      (let [opts (global-options this-ns true)]
+      (let [opts (global-options this-ns)]
         (is (some #(= "use-proxy" (name (:name %))) opts))))
     (testing "discover commands:"
       (let [cmds (#'clj-clapps.core/sub-commands this-ns)]
@@ -39,7 +39,7 @@
                   ["-v" nil "Verbosity level"]
                   ["-h" "--help" "Print help"]]
                  (map (partial take 3) (#'clj-clapps.core/opts-meta->cli-options
-                                        (global-options this-ns true))))))
+                                        (global-options this-ns))))))
     (testing "parse args:"
       (let [r (parse-main-args this-ns ["-h"])]
         (is (:exit-message r))
@@ -62,26 +62,44 @@
                 ^{:validate [#(= "w" %) "must be w"]} opt3]]
   (println "arg1:" arg1 "arg2:" arg2))
 
+(cl/defcmd expr
+  "evaluates arithmetic expression"
+  [^{:parse-fn read-string :validate [number? "Must be a number"]} n1
+   ^{:enum ["+" "-" "*" "/"]} op
+   ^{:parse-fn read-string :validate [number? "Must be a number"]} n2]
+  (let [result (case op
+                 "+" (+ n1 n2)
+                 "-" (- n1 n2)
+                 "*" (* n1 n2)
+                 "/" (/ n1 n2))]
+    (println result)))
+
 (deftest subcommands
-  (testing "parsing sub commands"
-    (let [cmd #'dummy-cmd
-          parse-cmd-args #'clj-clapps.core/parse-cmd-args]
-      (is (like? {:exit-message #(str/includes? % "[GLOBAL-OPTIONS] dummy-cmd [OPTIONS] ARG1 ARG2")
-                  :ok? true}
-                 (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "\t-v\t\tVerbosity Level"})))
-      (is (like? {:exit-message #(str/includes? % "Wrong number of arguments. Expected 2")
-                  :ok? nil}
-                 (parse-cmd-args (meta cmd) {:arguments []})))
-      (is (like? {:cmd-fn some?}
-                 (parse-cmd-args (meta cmd) {:arguments ["a" "b"] :main? false})))
-      (is (like? {:exit-message #(str/includes? % "must be an int")}
-                 (parse-cmd-args (meta cmd) {:arguments ["-o" "xyz" "a" "b"] :main? false})))
-      (is (like? {:cmd-fn some?}
-                 (parse-cmd-args (meta cmd) {:arguments ["-o" "5" "a" "b"] :main? false})))
-      (is (like? {:exit-message #(and (str/includes? % "[GLOBAL-OPTIONS]")
-                                      (str/includes? % "Global-Options:\n")
-                                      (str/includes? % "...global-options"))}
-                 (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "...global-options..."}))))))
+  (let [parse-cmd-args #'clj-clapps.core/parse-cmd-args]
+    (testing "parsing sub commands"
+      (let [cmd #'dummy-cmd]
+        (is (like? {:exit-message #(str/includes? % "[GLOBAL-OPTIONS] dummy-cmd [OPTIONS] ARG1 ARG2")
+                    :ok? true}
+                   (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "\t-v\t\tVerbosity Level"})))
+        (is (like? {:exit-message #(str/includes? % "Wrong number of arguments. Expected 2")
+                    :ok? nil}
+                   (parse-cmd-args (meta cmd) {:arguments []})))
+        (is (like? {:cmd-fn some?}
+                   (parse-cmd-args (meta cmd) {:arguments ["a" "b"] :main? false})))
+        (is (like? {:exit-message #(str/includes? % "must be an int")}
+                   (parse-cmd-args (meta cmd) {:arguments ["-o" "xyz" "a" "b"] :main? false})))
+        (is (like? {:cmd-fn some?}
+                   (parse-cmd-args (meta cmd) {:arguments ["-o" "5" "a" "b"] :main? false})))
+        (is (like? {:exit-message #(and (str/includes? % "[GLOBAL-OPTIONS]")
+                                        (str/includes? % "Global-Options:\n")
+                                        (str/includes? % "...global-options"))}
+                   (parse-cmd-args (meta cmd) {:arguments ["-h"] :summary "...global-options..."})))))
+    (testing "validating sub command args"
+      (let [cmd #'expr]
+        (is (like? {:exit-message #(str/includes? % "Invalid argument n1. Must be a number")}
+                   (parse-cmd-args (meta cmd) {:arguments ["x" "+" "1"]})))
+        (is (like? {:exit-message #(str/includes? % "Invalid argument op. It should be one of: +,-,*,/")}
+                   (parse-cmd-args (meta cmd) {:arguments ["3.12" "x" "1"]})))))))
 
 (deftest cmd-execs
   (testing "parsing main commands"
@@ -100,20 +118,9 @@
       (is (thrown? ExceptionInfo (cl/exec! this-ns ["-h"])))
       (is (nil? (cl/exec! this-ns ["dummy-cmd" "1" "2"]))))))
 
-(cl/defcmd expr
-  "evaluates arithmetic expression"
-  [^{:parse-fn read-string :validate [number? "must be a number"]} n1
-   ^{:enum ["+" "-" "*" "/"]} op
-   ^{:parse-fn read-string :validate [number? "must be a number"]} n2]
-  (let [result (case op
-                 "+" (+ n1 n2)
-                 "-" (- n1 n2)
-                 "*" (* n1 n2)
-                 "/" (/ n1 n2))]
-    (println result)))
-
 (deftest error-handling
   (testing "unhandled errors"
     (with-redefs [clj-clapps.core/exit (fn [status _] (is (= 1 status)))
                   clj-clapps.core/print-error (fn [msg] (is (str/includes? msg "Unhandled exception")))]
       (cl/exec! this-ns ["-v" "expr" "3.1415" "/" "0"]))))
+
