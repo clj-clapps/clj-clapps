@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.12] — 2021-09-19
+
 ## [0.4.11] — 2021-05-19
 
 ## [0.4.10] — 2021-05-05
@@ -33,4 +35,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 [0.4.8]: https://github.com/clj-clapps/clj-clapps/compare/0.4.7...0.4.8
 [0.4.10]: https://github.com/clj-clapps/clj-clapps/compare/0.4.8...0.4.10
 [0.4.11]: https://github.com/clj-clapps/clj-clapps/compare/0.4.10...0.4.11
-[Unreleased]: https://github.com/clj-clapps/clj-clapps/compare/0.4.11...HEAD
+[0.4.12]: https://github.com/clj-clapps/clj-clapps/compare/0.4.11...0.4.12
+[Unreleased]: https://github.com/clj-clapps/clj-clapps/compare/0.4.12...HEAD

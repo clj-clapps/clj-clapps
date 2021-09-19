@@ -9,7 +9,7 @@ Inspired by Python Typer, and built on top of Clojure's [tools.cli](https://gith
 
 
 ```clj
-[org.clojars.clj-clapps/clj-clapps "0.4.11"]
+[org.clojars.clj-clapps/clj-clapps "0.4.12"]
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ Lein:
 
 ```clojure
 ;; ...
-[org.clojars.clj-clapps/clj-clapps "0.4.11"]
+[org.clojars.clj-clapps/clj-clapps "0.4.12"]
 ;; ...
 ```
 
@@ -28,7 +28,7 @@ Clojure deps.edn:
 
 ```clojure
 ;; ...
-org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.11"}
+org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.12"}
 ;; ...
 
 ```
@@ -162,7 +162,7 @@ In short, the [spartan.spec](https://github.com/borkdude/spartan.spec) needs to 
 
 (require '[babashka.deps :as deps])
 
-(deps/add-deps '{:deps {org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.11"}
+(deps/add-deps '{:deps {org.clojars.clj-clapps/clj-clapps {:mvn/version "0.4.12"}
                         borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
                                                :sha "12947185b4f8b8ff8ee3bc0f19c98dbde54d4c90"}}})
 
